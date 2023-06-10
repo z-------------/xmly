@@ -45,14 +45,14 @@ proc skipElement(x: var XmlParser) =
       discard
     x.next()
 
-proc parseHook(t: typedesc[string]; x: var XmlParser): t =
+proc parseHook(t: typedesc[string]; x: var XmlParser; dest: var t) =
   case x.kind
   of xmlCharData:
-    result = x.charData
+    dest = x.charData
   else:
     discard
 
-proc parseHook(t: typedesc[object]; x: var XmlParser): t =
+proc parseHook(t: typedesc[object]; x: var XmlParser; dest: var t) =
   var
     depth = 1
   while true:
@@ -68,7 +68,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
       let name = x.elementName
       let hasAttrs = x.kind == xmlElementOpen
       x.next()
-      for key, val in result.fieldPairs:
+      for key, val in dest.fieldPairs:
         if key == name:
           if hasAttrs:
             # TODO handle attributes
@@ -77,7 +77,8 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
             type Item = typeof(val[0])
           else:
             type Item = typeof(val)
-          var item = parseHook(Item, x)
+          var item = default(Item)
+          parseHook(Item, x, item)
           when typeof(val) is seq:
             val.add(item)
           else:
@@ -101,7 +102,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
 
 proc fromXml*(t: typedesc; x: var XmlParser): t =
   x.next()
-  parseHook(t, x)
+  parseHook(t, x, result)
 
 proc fromXml*(t: typedesc; s: string): t =
   let input = newStringStream(s)
