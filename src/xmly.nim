@@ -16,13 +16,16 @@ import std/[
   streams,
   parsexml,
   options,
+  macros,
 
   sugar,
 ]
 
-# TODO attributes
+# TODO non-string attributes
 # TODO mixed content
 # TODO Option instead of default value
+
+template attr() {.pragma.}
 
 template raiseXmlError(x: XmlParser) =
   raise newException(ValueError, x.errorMsg)
@@ -70,14 +73,26 @@ proc parseHook(t: typedesc[object]; x: var XmlParser; dest: var t) =
       x.next()
       for key, val in dest.fieldPairs:
         if key == name:
-          if hasAttrs:
-            # TODO handle attributes
-            x.next()
           when typeof(val) is seq:
             type Item = typeof(val[0])
           else:
             type Item = typeof(val)
           var item = default(Item)
+          if hasAttrs:
+            while true:
+              case x.kind
+              of xmlAttribute:
+                when item is object:
+                  for aKey, aVal in item.fieldPairs:
+                    if aKey == x.attrKey:
+                      when aVal.hasCustomPragma(attr):
+                        aVal = x.attrValue
+                      break
+              of xmlElementClose:
+                break
+              else:
+                discard
+              x.next()
           parseHook(Item, x, item)
           when typeof(val) is seq:
             val.add(item)
@@ -118,6 +133,7 @@ when isMainModule:
     Document = object
       root: Root
     Root = object
+      myrootattr {.attr.}: string
       metadata: Metadata
       repository: seq[Repository]
       dependencies: Dependencies
@@ -127,6 +143,7 @@ when isMainModule:
     Repository = object
       name: string
       url: string
+      optional {.attr.}: string
     Dependencies = object
       dependency: seq[Dependency]
     Dependency = object
@@ -143,7 +160,7 @@ when isMainModule:
     <name>First Repository</name>
     <url>https://example.com</url>
   </repository>
-  <repository>
+  <repository optional="false">
     <name>Second Repository</name>
     <url>https://example.org</url>
   </repository>
