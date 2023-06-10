@@ -48,14 +48,14 @@ proc skipElement(x: var XmlParser) =
       discard
     x.next()
 
-proc parseHook(t: typedesc[string]; x: var XmlParser; dest: var t) =
+proc parseXmlHook(x: var XmlParser; dest: var string) =
   case x.kind
   of xmlCharData:
     dest = x.charData
   else:
     discard
 
-proc parseHook(t: typedesc[object]; x: var XmlParser; dest: var t) =
+proc parseXmlHook(x: var XmlParser; dest: var object) =
   var
     depth = 1
   while true:
@@ -93,7 +93,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser; dest: var t) =
               else:
                 discard
               x.next()
-          parseHook(Item, x, item)
+          parseXmlHook(x, item)
           when typeof(val) is seq:
             val.add(item)
           else:
@@ -117,7 +117,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser; dest: var t) =
 
 proc fromXml*(t: typedesc; x: var XmlParser): t =
   x.next()
-  parseHook(t, x, result)
+  parseXmlHook(x, result)
 
 proc fromXml*(t: typedesc; s: string): t =
   let input = newStringStream(s)
