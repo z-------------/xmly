@@ -64,8 +64,6 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       raiseXmlError(x)
     of xmlEof:
       break
-    of xmlCharData, xmlCData:
-      discard
     of xmlElementStart, xmlElementOpen:
       inc depth
       let name = x.elementName
@@ -105,13 +103,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       dec depth
       if depth <= 0:
         break
-    of xmlElementClose:
-      discard
-    of xmlAttribute:
-      discard
-    of xmlEntity:
-      discard
-    of xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
+    of xmlCharData, xmlCData, xmlElementClose, xmlAttribute, xmlEntity, xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
       discard
     x.next()
 
