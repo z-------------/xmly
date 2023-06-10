@@ -70,7 +70,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
         break
     if not found:
       echo "no match for '", elementName, "', skipping"
-      skipElement(x)
+    skipElement(x)
 
   var
     depth = 1
