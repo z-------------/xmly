@@ -29,8 +29,7 @@ template raiseXmlError(x: XmlParser) =
 
 proc skipElement(x: var XmlParser) =
   var depth = 1
-  while depth > 0:
-    x.next()
+  while true:
     case x.kind
     of xmlError:
       raiseXmlError(x)
@@ -40,11 +39,14 @@ proc skipElement(x: var XmlParser) =
       inc depth
     of xmlElementEnd:
       dec depth
+      if depth <= 0:
+        break
     else:
       discard
+    x.next()
 
 proc parseHook(t: typedesc[string]; x: var XmlParser): t =
-  x.next()
+  dump x.kind
   case x.kind
   of xmlCharData:
     result = x.charData
@@ -53,6 +55,8 @@ proc parseHook(t: typedesc[string]; x: var XmlParser): t =
 
 proc parseHook(t: typedesc[object]; x: var XmlParser): t =
   template parseField(elementName: string) =
+    x.next()
+    dump x.kind
     var found = false
     for key, val in result.fieldPairs:
       dump (key, val, elementName)
@@ -71,8 +75,7 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
   var
     depth = 1
     openedElementName = string.none
-  while depth > 0:
-    x.next()
+  while true:
     dump x.kind
     case x.kind
     of xmlError:
@@ -84,28 +87,37 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
     of xmlElementStart:
       dump x.elementName
       inc depth
+      dump depth
       let name = x.elementName
       parseField(name)
+      continue
     of xmlElementOpen:
       dump x.elementName
       inc depth
+      dump depth
       openedElementName = x.elementName.some
     of xmlElementEnd:
       dump x.elementName
       dec depth
+      dump depth
+      if depth <= 0:
+        break
     of xmlElementClose:
       if openedElementName.isSome:
         let name = openedElementName.get
         openedElementName = string.none
         parseField(name)
+        continue
     of xmlAttribute:
       dump (x.attrKey, x.attrValue)
     of xmlEntity:
       dump x.entityName
     of xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
       discard
+    x.next()
 
 proc fromXml*(t: typedesc; x: var XmlParser): t =
+  x.next()
   parseHook(t, x)
 
 proc fromXml*(t: typedesc; s: string): t =
