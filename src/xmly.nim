@@ -53,22 +53,8 @@ proc parseHook(t: typedesc[string]; x: var XmlParser): t =
     discard
 
 proc parseHook(t: typedesc[object]; x: var XmlParser): t =
-  template parseField(elementName: string) =
-    x.next()
-    var found = false
-    for key, val in result.fieldPairs:
-      if key == elementName:
-        when typeof(val) is seq:
-          val.add(parseHook(typeof(val[0]), x))
-        else:
-          val = parseHook(typeof(val), x)
-        found = true
-        break
-    skipElement(x)
-
   var
     depth = 1
-    openedElementName = string.none
   while true:
     case x.kind
     of xmlError:
@@ -77,24 +63,34 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
       break
     of xmlCharData, xmlCData:
       discard
-    of xmlElementStart:
+    of xmlElementStart, xmlElementOpen:
       inc depth
       let name = x.elementName
-      parseField(name)
+      let hasAttrs = x.kind == xmlElementOpen
+      x.next()
+      for key, val in result.fieldPairs:
+        if key == name:
+          if hasAttrs:
+            # TODO handle attributes
+            x.next()
+          when typeof(val) is seq:
+            type Item = typeof(val[0])
+          else:
+            type Item = typeof(val)
+          var item = parseHook(Item, x)
+          when typeof(val) is seq:
+            val.add(item)
+          else:
+            val = item
+          break
+      skipElement(x)
       continue
-    of xmlElementOpen:
-      inc depth
-      openedElementName = x.elementName.some
     of xmlElementEnd:
       dec depth
       if depth <= 0:
         break
     of xmlElementClose:
-      if openedElementName.isSome:
-        let name = openedElementName.get
-        openedElementName = string.none
-        parseField(name)
-        continue
+      discard
     of xmlAttribute:
       discard
     of xmlEntity:
