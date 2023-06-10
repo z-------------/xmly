@@ -46,7 +46,6 @@ proc skipElement(x: var XmlParser) =
     x.next()
 
 proc parseHook(t: typedesc[string]; x: var XmlParser): t =
-  dump x.kind
   case x.kind
   of xmlCharData:
     result = x.charData
@@ -56,50 +55,38 @@ proc parseHook(t: typedesc[string]; x: var XmlParser): t =
 proc parseHook(t: typedesc[object]; x: var XmlParser): t =
   template parseField(elementName: string) =
     x.next()
-    dump x.kind
     var found = false
     for key, val in result.fieldPairs:
-      dump (key, val, elementName)
       if key == elementName:
-        echo "matched key '", key, "'"
         when typeof(val) is seq:
           val.add(parseHook(typeof(val[0]), x))
         else:
           val = parseHook(typeof(val), x)
         found = true
         break
-    if not found:
-      echo "no match for '", elementName, "', skipping"
     skipElement(x)
 
   var
     depth = 1
     openedElementName = string.none
   while true:
-    dump x.kind
     case x.kind
     of xmlError:
       raiseXmlError(x)
     of xmlEof:
       break
     of xmlCharData, xmlCData:
-      dump x.charData
+      discard
     of xmlElementStart:
-      dump x.elementName
       inc depth
-      dump depth
       let name = x.elementName
       parseField(name)
       continue
     of xmlElementOpen:
-      dump x.elementName
       inc depth
-      dump depth
       openedElementName = x.elementName.some
     of xmlElementEnd:
-      dump x.elementName
       dec depth
-      dump depth
       if depth <= 0:
         break
     of xmlElementClose:
@@ -109,9 +96,9 @@ proc parseHook(t: typedesc[object]; x: var XmlParser): t =
         parseField(name)
         continue
     of xmlAttribute:
-      dump (x.attrKey, x.attrValue)
+      discard
     of xmlEntity:
-      dump x.entityName
+      discard
     of xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
       discard
     x.next()
@@ -152,8 +139,8 @@ when isMainModule:
   const Xml = """
 <root myrootattr="hello">
   <metadata>
-    <author>Jimmy</author>
-    <version>0.1.2</version>
+    <author>Jimmy<ftw>huh</ftw></author>
+    <version>0.1.2<wtf>yes</wtf></version>
   </metadata>
   <repository>
     <name>First Repository</name>
