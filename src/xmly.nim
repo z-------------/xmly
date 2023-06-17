@@ -13,15 +13,12 @@
 # limitations under the License.
 
 import std/[
-  streams,
-  parsexml,
-  options,
   macros,
-
-  sugar,
+  parsexml,
+  streams,
+  strutils,
 ]
 
-# TODO non-string attributes
 # TODO mixed content
 # TODO Option instead of default value
 
@@ -48,10 +45,19 @@ proc skipElement(x: var XmlParser) =
       discard
     x.next()
 
-proc parseXmlHook(x: var XmlParser; dest: var string) =
+proc parseHook(s: string; dest: var string) {.raises: [].} =
+  dest = s
+
+proc parseHook[T: SomeInteger](s: string; dest: var T) {.raises: [ValueError].} =
+  dest = T(parseBiggestInt(s))
+
+proc parseHook(s: string; dest: var bool) {.raises: [ValueError].} =
+  dest = parseBool(s)
+
+proc parseXmlHook(x: var XmlParser; dest: var (not object)) =
   case x.kind
   of xmlCharData:
-    dest = x.charData
+    parseHook(x.charData, dest)
   else:
     discard
 
@@ -83,7 +89,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
                   for aKey, aVal in item.fieldPairs:
                     if aKey == x.attrKey:
                       when aVal.hasCustomPragma(attr):
-                        aVal = x.attrValue
+                        parseHook(x.attrValue, aVal)
                       break
               of xmlElementClose:
                 break
@@ -131,10 +137,11 @@ when isMainModule:
     Metadata = object
       author: string
       version: string
+      somenumber: int
     Repository = object
       name: string
       url: string
-      optional {.attr.}: string
+      optional {.attr.}: bool = true
     Dependencies = object
       dependency: seq[Dependency]
     Dependency = object
@@ -146,6 +153,7 @@ when isMainModule:
   <metadata>
     <author>Jimmy<ftw>huh</ftw></author>
     <version>0.1.2<wtf>yes</wtf></version>
+    <somenumber>42</somenumber>
   </metadata>
   <repository>
     <name>First Repository</name>
