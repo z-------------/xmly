@@ -24,6 +24,15 @@ import std/[
 
 template attr() {.pragma.}
 
+template eqName(a, b: string): bool =
+  if a == b:
+    true
+  else:
+    let
+      aNorm = a.toLowerAscii.replace("_", "")
+      bNorm = b.toLowerAscii.replace("_", "")
+    aNorm == bNorm
+
 template raiseXmlError(x: XmlParser) =
   raise newException(ValueError, x.errorMsg)
 
@@ -79,7 +88,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       let hasAttrs = x.kind == xmlElementOpen
       x.next()
       for key, val in dest.fieldPairs:
-        if key == name:
+        if key.eqName(name):
           when typeof(val) is seq:
             var item = default(typeof(val[0]))
           else:
@@ -90,7 +99,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
               of xmlAttribute:
                 when item is object:
                   for aKey, aVal in item.fieldPairs:
-                    if aKey == x.attrKey:
+                    if aKey.eqName(x.attrKey):
                       when aVal.hasCustomPragma(attr):
                         parseHook(x.attrValue, aVal)
                       break
@@ -140,8 +149,8 @@ when isMainModule:
     Metadata = object
       author: string
       version: string
-      somenumber: int
-      somefloat: float
+      someNumber: int
+      someFloat: float
     Repository = object
       name: string
       url: string
