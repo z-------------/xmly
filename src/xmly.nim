@@ -54,6 +54,9 @@ proc parseHook[T: SomeInteger](s: string; dest: var T) {.raises: [ValueError].} 
 proc parseHook(s: string; dest: var bool) {.raises: [ValueError].} =
   dest = parseBool(s)
 
+proc parseHook[T: SomeFloat](s: string; dest: var T) {.raises: [ValueError].} =
+  dest = T(parseFloat(s))
+
 proc parseXmlHook(x: var XmlParser; dest: var (not object)) =
   case x.kind
   of xmlCharData:
@@ -138,6 +141,7 @@ when isMainModule:
       author: string
       version: string
       somenumber: int
+      somefloat: float
     Repository = object
       name: string
       url: string
@@ -154,6 +158,7 @@ when isMainModule:
     <author>Jimmy<ftw>huh</ftw></author>
     <version>0.1.2<wtf>yes</wtf></version>
     <somenumber>42</somenumber>
+    <somefloat>3.14</somefloat>
   </metadata>
   <repository>
     <name>First Repository</name>
