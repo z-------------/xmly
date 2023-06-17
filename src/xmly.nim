@@ -22,9 +22,9 @@ import std/[
 # TODO mixed content
 # TODO Option instead of default value
 
-template attr() {.pragma.}
+template attr*() {.pragma.}
 
-template name(name: string) {.pragma.}
+template name*(name: string) {.pragma.}
 
 func eqName(a, b: string): bool =
   if a == b:
