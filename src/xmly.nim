@@ -87,9 +87,43 @@ proc parseXmlHook(x: var XmlParser; dest: var (Option or not object)) =
   else:
     discard
 
+proc parseXmlHook(x: var XmlParser; dest: var object)
+
+template handleElementBegin(x: var XmlParser; dest: var object) =
+  let elName = x.elementName
+  let hasAttrs = x.kind == xmlElementOpen
+  x.next()
+  for key, val in dest.fieldPairs:
+    if nameMatches(key, val, elName):
+      when typeof(val) is seq:
+        var item = default(typeof(val[0]))
+      else:
+        var item = default(typeof(val))
+      if hasAttrs:
+        while true:
+          case x.kind
+          of xmlAttribute:
+            when item is object:
+              for aKey, aVal in item.fieldPairs:
+                if nameMatches(aKey, aVal, x.attrKey):
+                  when aVal.hasCustomPragma(attr):
+                    parseHook(x.attrValue, aVal)
+                  break
+          of xmlElementClose:
+            break
+          else:
+            discard
+          x.next()
+      parseXmlHook(x, item)
+      when typeof(val) is seq:
+        val.add(item)
+      else:
+        val = item
+      break
+  skipElement(x)
+
 proc parseXmlHook(x: var XmlParser; dest: var object) =
-  var
-    depth = 1
+  var depth = 1
   while true:
     case x.kind
     of xmlError:
@@ -98,37 +132,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       break
     of xmlElementStart, xmlElementOpen:
       inc depth
-      let elName = x.elementName
-      let hasAttrs = x.kind == xmlElementOpen
-      x.next()
-      for key, val in dest.fieldPairs:
-        if nameMatches(key, val, elName):
-          when typeof(val) is seq:
-            var item = default(typeof(val[0]))
-          else:
-            var item = default(typeof(val))
-          if hasAttrs:
-            while true:
-              case x.kind
-              of xmlAttribute:
-                when item is object:
-                  for aKey, aVal in item.fieldPairs:
-                    if nameMatches(aKey, aVal, x.attrKey):
-                      when aVal.hasCustomPragma(attr):
-                        parseHook(x.attrValue, aVal)
-                      break
-              of xmlElementClose:
-                break
-              else:
-                discard
-              x.next()
-          parseXmlHook(x, item)
-          when typeof(val) is seq:
-            val.add(item)
-          else:
-            val = item
-          break
-      skipElement(x)
+      handleElementBegin(x, dest)
       continue
     of xmlElementEnd:
       dec depth
