@@ -72,10 +72,9 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       for key, val in dest.fieldPairs:
         if key == name:
           when typeof(val) is seq:
-            type Item = typeof(val[0])
+            var item = default(typeof(val[0]))
           else:
-            type Item = typeof(val)
-          var item = default(Item)
+            var item = default(typeof(val))
           if hasAttrs:
             while true:
               case x.kind
