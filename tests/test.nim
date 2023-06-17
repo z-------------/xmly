@@ -30,18 +30,14 @@ test "it works":
   const Xml = """
 <root rootattr="hello">
   <metadata>
+    <somenumber>42</somenumber>
     <author>Jimmy<ftw>huh</ftw></author>
     <version>0.1.2<wtf>yes</wtf></version>
-    <somenumber>42</somenumber>
     <magic>3.14</magic>
   </metadata>
   <repository>
     <name>First Repository</name>
     <url>https://example.com</url>
-  </repository>
-  <repository optional="false">
-    <name>Second Repository</name>
-    <url>https://example.org</url>
   </repository>
   <dependencies>
     <dependency>
@@ -52,6 +48,10 @@ test "it works":
       <version>^1.2.4</version>
     </dependency>
   </dependencies>
+  <repository optional="false">
+    <name>Second Repository</name>
+    <url>https://example.org</url>
+  </repository>
 </root>
   """
   let expected = Document(
