@@ -4,7 +4,7 @@ import std/[
   unittest,
 ]
 
-test "it works":
+test "basic":
   type
     Document = object
       root: Root
@@ -87,6 +87,44 @@ test "it works":
             version: some("^1.2.4"),
           ),
         ],
+      ),
+    ),
+  )
+  let parsed = Document.fromXml(Xml)
+  check parsed == expected
+
+test "self-closing tag":
+  type
+    Document = object
+      root: Root
+    Root = object
+      self: seq[Self]
+      nested: Nested
+    Self = object
+      closing {.attr.}: string
+    Nested = object
+      self: Self
+      with: string
+
+  const Xml = """
+<root>
+  <self closing="tag"/>
+  <nested>
+    <self closing="another"/>
+    <with>a sibling</with>
+  </nested>
+  <self closing="and an uncle"/>
+</root>
+  """
+  let expected = Document(
+    root: Root(
+      self: @[
+        Self(closing: "tag"),
+        Self(closing: "and an uncle"),
+      ],
+      nested: Nested(
+        self: Self(closing: "another"),
+        with: "a sibling",
       ),
     ),
   )

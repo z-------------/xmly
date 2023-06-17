@@ -20,6 +20,7 @@ import std/[
   strutils,
 ]
 
+# TODO leaves that have attributes
 # TODO mixed content
 
 template attr*() {.pragma.}
