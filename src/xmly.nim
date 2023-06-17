@@ -14,13 +14,13 @@
 
 import std/[
   macros,
+  options,
   parsexml,
   streams,
   strutils,
 ]
 
 # TODO mixed content
-# TODO Option instead of default value
 
 template attr*() {.pragma.}
 
@@ -74,7 +74,12 @@ proc parseHook(s: string; dest: var bool) {.raises: [ValueError].} =
 proc parseHook[T: SomeFloat](s: string; dest: var T) {.raises: [ValueError].} =
   dest = T(parseFloat(s))
 
-proc parseXmlHook(x: var XmlParser; dest: var (not object)) =
+proc parseHook[T](s: string; dest: var Option[T]) =
+  var val: T
+  parseHook(s, val)
+  dest = some(val)
+
+proc parseXmlHook(x: var XmlParser; dest: var (Option or not object)) =
   case x.kind
   of xmlCharData:
     parseHook(x.charData, dest)

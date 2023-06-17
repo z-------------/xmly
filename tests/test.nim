@@ -1,5 +1,6 @@
 import pkg/xmly
 import std/[
+  options,
   unittest,
 ]
 
@@ -25,7 +26,7 @@ test "it works":
       dependency: seq[Dependency]
     Dependency = object
       name: string
-      version: string
+      version: Option[string]
 
   const Xml = """
 <root rootattr="hello">
@@ -79,11 +80,11 @@ test "it works":
         dependency: @[
           Dependency(
             name: "myfirstdep",
-            version: "",
+            version: none(string),
           ),
           Dependency(
             name: "myseconddep",
-            version: "^1.2.4",
+            version: some("^1.2.4"),
           ),
         ],
       ),
