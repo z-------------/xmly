@@ -24,7 +24,9 @@ import std/[
 
 template attr() {.pragma.}
 
-template eqName(a, b: string): bool =
+template name(name: string) {.pragma.}
+
+func eqName(a, b: string): bool =
   if a == b:
     true
   else:
@@ -32,6 +34,12 @@ template eqName(a, b: string): bool =
       aNorm = a.toLowerAscii.replace("_", "")
       bNorm = b.toLowerAscii.replace("_", "")
     aNorm == bNorm
+
+template nameMatches(key: string; val: untyped; elName: string): bool =
+  when val.hasCustomPragma(xmly.name):
+    val.getCustomPragmaVal(xmly.name) == elName
+  else:
+    key.eqName(elName)
 
 template raiseXmlError(x: XmlParser) =
   raise newException(ValueError, x.errorMsg)
@@ -84,11 +92,11 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       break
     of xmlElementStart, xmlElementOpen:
       inc depth
-      let name = x.elementName
+      let elName = x.elementName
       let hasAttrs = x.kind == xmlElementOpen
       x.next()
       for key, val in dest.fieldPairs:
-        if key.eqName(name):
+        if nameMatches(key, val, elName):
           when typeof(val) is seq:
             var item = default(typeof(val[0]))
           else:
@@ -99,7 +107,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
               of xmlAttribute:
                 when item is object:
                   for aKey, aVal in item.fieldPairs:
-                    if aKey.eqName(x.attrKey):
+                    if nameMatches(aKey, aVal, x.attrKey):
                       when aVal.hasCustomPragma(attr):
                         parseHook(x.attrValue, aVal)
                       break
@@ -142,7 +150,7 @@ when isMainModule:
     Document = object
       root: Root
     Root = object
-      myrootattr {.attr.}: string
+      myRootAttr {.attr, name: "rootattr".}: string
       metadata: Metadata
       repository: seq[Repository]
       dependencies: Dependencies
@@ -162,7 +170,7 @@ when isMainModule:
       version: string
 
   const Xml = """
-<root myrootattr="hello">
+<root rootattr="hello">
   <metadata>
     <author>Jimmy<ftw>huh</ftw></author>
     <version>0.1.2<wtf>yes</wtf></version>
