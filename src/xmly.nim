@@ -20,12 +20,11 @@ import std/[
   strutils,
 ]
 
-# TODO leaves that have attributes
-# TODO mixed content
-
 template attr*() {.pragma.}
 
 template name*(name: string) {.pragma.}
+
+template text*() {.pragma.}
 
 func eqName(a, b: string): bool =
   if a == b:
@@ -67,13 +66,13 @@ proc parseHook(s: string; dest: var string) {.raises: [].} =
   dest = s
 
 proc parseHook[T: SomeInteger](s: string; dest: var T) {.raises: [ValueError].} =
-  dest = T(parseBiggestInt(s))
+  dest = T(parseBiggestInt(s.strip))
 
 proc parseHook(s: string; dest: var bool) {.raises: [ValueError].} =
-  dest = parseBool(s)
+  dest = parseBool(s.strip)
 
 proc parseHook[T: SomeFloat](s: string; dest: var T) {.raises: [ValueError].} =
-  dest = T(parseFloat(s))
+  dest = T(parseFloat(s.strip))
 
 proc parseHook[T](s: string; dest: var Option[T]) =
   var val: T
@@ -127,6 +126,16 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       raiseXmlError(x)
     of xmlEof:
       break
+    of xmlCharData:
+      for key, val in dest.fieldPairs:
+        when val.hasCustomPragma(text):
+          when val is seq:
+            var item = default(typeof(val[0]))
+            parseHook(x.charData, item)
+            val.add(item)
+          else:
+            parseHook(x.charData, val)
+          break
     of xmlElementStart, xmlElementOpen:
       inc depth
       handleElementBegin(x, dest)
@@ -135,7 +144,7 @@ proc parseXmlHook(x: var XmlParser; dest: var object) =
       dec depth
       if depth <= 0:
         break
-    of xmlCharData, xmlCData, xmlElementClose, xmlAttribute, xmlEntity, xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
+    of xmlCData, xmlElementClose, xmlAttribute, xmlEntity, xmlWhitespace, xmlComment, xmlPI, xmlSpecial:
       discard
     x.next()
 
