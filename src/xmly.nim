@@ -27,6 +27,10 @@ template attr*() {.pragma.}
 
 template name*(name: string) {.pragma.}
 
+type
+  ParseHooked = concept
+    proc parseHook(s: string; dest: var Self)
+
 func eqName(a, b: string): bool =
   if a == b:
     true
@@ -80,7 +84,7 @@ proc parseHook[T](s: string; dest: var Option[T]) =
   parseHook(s, val)
   dest = some(val)
 
-proc parseXmlHook(x: var XmlParser; dest: var (Option or not object)) =
+proc parseXmlHook(x: var XmlParser; dest: var (ParseHooked or not object)) =
   case x.kind
   of xmlCharData:
     parseHook(x.charData, dest)
