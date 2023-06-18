@@ -102,7 +102,7 @@ template handleElementBegin(x: var XmlParser; dest: var object) =
                   when aVal.hasCustomPragma(attr):
                     parseHook(x.attrValue, aVal)
                   break
-          of xmlElementClose:
+          of xmlEof, xmlElementClose:
             break
           else:
             discard
