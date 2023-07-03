@@ -157,9 +157,16 @@ proc fromXml*(t: typedesc; x: var XmlParser): t =
   x.next()
   parseXmlHook(x, result)
 
-proc fromXml*(t: typedesc; s: string): t =
-  let input = newStringStream(s)
+proc fromXml*(t: typedesc; s: Stream): t =
   var x = XmlParser()
-  x.open(input, filename = "")
+  x.open(s, filename = "")
   defer: x.close()
   fromXml(t, x)
+
+proc fromXml*(t: typedesc; f: File): t =
+  let stream = newFileStream(f)
+  fromXml(t, stream)
+
+proc fromXml*(t: typedesc; s: string): t =
+  let stream = newStringStream(s)
+  fromXml(t, stream)
