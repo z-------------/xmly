@@ -1,0 +1,13 @@
+test:
+  stage: test
+  only:
+    - master
+  before_script:
+    - pushd $HOME
+    - mkdir nim && cd nim
+    - curl -L 'https://github.com/nim-lang/nightlies/releases/download/latest-devel/linux_x64.tar.xz' | tar -xJ
+    - for d in *; do echo "$d"; PATH="$(pwd)/$d/bin:$PATH"; done
+    - popd
+    - atlas install --autoinit --cfgHere
+  script:
+    - for f in tests/t*.nim; do nim r --verbosity:0 "$f"; done
