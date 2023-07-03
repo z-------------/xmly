@@ -130,3 +130,27 @@ test "self-closing tag":
   )
   let parsed = Document.fromXml(Xml)
   check parsed == expected
+
+test "names with hyphen":
+  type
+    Document = object
+      myRoot: MyRoot
+    MyRoot = object
+      greeting: Greeting
+    Greeting = object
+      dataText {.attr.}: string
+
+  const Xml = """
+<my-root>
+  <greeting data-text="Hello"/>
+</my-root>
+  """
+  let expected = Document(
+    myRoot: MyRoot(
+      greeting: Greeting(
+        dataText: "Hello",
+      ),
+    ),
+  )
+  let parsed = Document.fromXml(Xml)
+  check parsed == expected

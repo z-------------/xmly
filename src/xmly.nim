@@ -26,13 +26,18 @@ template name*(name: string) {.pragma.}
 
 template text*() {.pragma.}
 
+func replace(s: string; subs: openArray[string]; by: string): string {.raises: [].} =
+  result = s
+  for sub in subs:
+    result = result.replace(sub, by)
+
 func eqName(a, b: string): bool =
   if a == b:
     true
   else:
     let
-      aNorm = a.toLowerAscii.replace("_", "")
-      bNorm = b.toLowerAscii.replace("_", "")
+      aNorm = a.toLowerAscii.replace(["_", "-"], "")
+      bNorm = b.toLowerAscii.replace(["_", "-"], "")
     aNorm == bNorm
 
 template nameMatches(key: string; val: untyped; elName: string): bool =
