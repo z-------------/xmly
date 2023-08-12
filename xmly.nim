@@ -32,13 +32,13 @@ func replace(s: string; subs: openArray[string]; by: string): string {.raises: [
     result = result.replace(sub, by)
 
 func eqName(a, b: string): bool =
+  template normalize(s: string): string =
+    s.toLowerAscii.replace(["_", "-"], "")
+
   if a == b:
     true
   else:
-    let
-      aNorm = a.toLowerAscii.replace(["_", "-"], "")
-      bNorm = b.toLowerAscii.replace(["_", "-"], "")
-    aNorm == bNorm
+    a.normalize == b.normalize
 
 template nameMatches(key: string; val: untyped; elName: string): bool =
   when val.hasCustomPragma(xmly.name):
