@@ -5,8 +5,8 @@ test:
   before_script:
     - pushd $HOME
     - mkdir nim && cd nim
-    - curl -L 'https://github.com/nim-lang/nightlies/releases/download/latest-devel/linux_x64.tar.xz' | tar -xJ
-    - for d in *; do echo "$d"; PATH="$(pwd)/$d/bin:$PATH"; done
+    - curl -L 'https://nim-lang.org/download/nim-2.0.0-linux_x64.tar.xz' | tar -xJ
+    - PATH="$(pwd)/nim-2.0.0/bin:$PATH"
     - popd
     - atlas install --autoinit --cfgHere
   script:
